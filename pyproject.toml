@@ -1,0 +1,103 @@
+[project]
+name = "mech-cad"
+version = "0.1.0"
+description = "Enterprise 2D engineering drawing to 3D CAD conversion platform"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+
+dependencies = [
+    # Web framework
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "python-multipart>=0.0.12",
+    "websockets>=12.0",
+
+    # Database
+    "sqlmodel>=0.0.22",
+    "alembic>=1.13",
+    "aiosqlite>=0.20",        # Async SQLite for dev
+    "asyncpg>=0.29",          # Async PostgreSQL for prod
+
+    # Task queue
+    "rq>=1.16",
+    "redis>=5.0",
+
+    # AI providers
+    "langchain>=0.3",
+    "langchain-openai>=0.2",
+    "langchain-google-genai>=2.0",
+    "langchain-community>=0.3",   # Ollama support
+    "langgraph>=0.2",
+    "openai>=1.50",               # Direct OpenAI client
+    "google-generativeai>=0.8",   # Gemini direct
+
+    # CAD
+    "cadquery>=2.4",
+    "trimesh>=4.0",               # GLB/STL processing
+
+    # Computer Vision / Image Processing
+    "opencv-python-headless>=4.10",
+    "Pillow>=10.0",
+    "numpy>=1.26",
+    "scipy>=1.13",                # Hausdorff distance
+
+    # OCR
+    "paddleocr>=2.8",
+    "paddlepaddle>=2.6",
+
+    # Embeddings / Vector Search
+    "sentence-transformers>=3.0",
+    "faiss-cpu>=1.8",
+
+    # PDF handling
+    "pdf2image>=1.17",
+    "pypdf>=4.0",
+
+    # Utilities
+    "loguru>=0.7",
+    "pydantic>=2.8",
+    "pydantic-settings>=2.5",
+    "httpx>=0.27",
+    "python-dotenv>=1.0",
+    "python-magic>=0.4",          # MIME type detection via libmagic
+    "rich>=13.0",                 # Terminal output
+    "typer>=0.12",                # CLI
+    "orjson>=3.10",               # Fast JSON
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=5.0",
+    "httpx>=0.27",               # For FastAPI test client
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pre-commit>=3.8",
+]
+
+[project.scripts]
+mech-cad = "mech_cad.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["mech_cad"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
