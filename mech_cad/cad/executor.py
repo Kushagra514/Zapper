@@ -18,12 +18,11 @@ def _apply_resource_limits():
     if resource is None:
         return
     try:
+        # Max CPU time limit in seconds
         resource.setrlimit(resource.RLIMIT_CPU, (settings.CAD_EXEC_TIMEOUT_SECONDS, settings.CAD_EXEC_TIMEOUT_SECONDS))
-        max_mem = 2 * 1024 * 1024 * 1024
-        resource.setrlimit(resource.RLIMIT_AS, (max_mem, max_mem))
-        max_fsize = 200 * 1024 * 1024
+        # Max output file size: 500 MB
+        max_fsize = 500 * 1024 * 1024
         resource.setrlimit(resource.RLIMIT_FSIZE, (max_fsize, max_fsize))
-        resource.setrlimit(resource.RLIMIT_NPROC, (8, 8))
     except Exception as e:
         logger.warning(f"Failed to set resource limits: {e}")
 
@@ -35,8 +34,10 @@ def execute_cad_code(
     timeout_seconds: int | None = None,
 ) -> dict:
     """Run generated Python CadQuery code safely in a separate subprocess."""
+    output_dir = output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    script_path = output_dir / "generated_cad_script.py"
+    script_filename = "generated_cad_script.py"
+    script_path = output_dir / script_filename
     step_output_path = output_dir / output_step_name
 
     full_code = code
@@ -46,16 +47,21 @@ def execute_cad_code(
     script_path.write_text(full_code, encoding="utf-8")
     timeout = timeout_seconds or settings.CAD_EXEC_TIMEOUT_SECONDS
 
-    # Use current python executable to inherit installed packages if needed
-    cmd = [sys.executable, str(script_path)]
+    cmd = [sys.executable, script_filename]
     env = dict(os.environ)
+    env.update({
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "PYTHONUNBUFFERED": "1",
+    })
 
     logger.info(f"Executing CAD code sandbox in {output_dir}")
     try:
         proc = subprocess.run(
             cmd,
             capture_output=True,
-            timeout=timeout + 5,
+            timeout=timeout + 15,
             cwd=str(output_dir),
             env=env,
             preexec_fn=_apply_resource_limits if os.name == "posix" else None,
